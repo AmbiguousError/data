@@ -1,0 +1,7 @@
+# Ignore generated files and directories
+uploads/
+reports/
+logs/
+*.log
+*.csv
+*.html
