@@ -1,0 +1,11 @@
+ * Serving Flask app 'app'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [15/Nov/2025 18:25:05] "POST /upload HTTP/1.1" 200 -
+Analysis complete. Report saved to reports/56643888-cf1d-4ae3-8508-9ea06d0eac28.html
+127.0.0.1 - - [15/Nov/2025 18:25:08] "GET /status/56643888-cf1d-4ae3-8508-9ea06d0eac28 HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2025 19:17:00] "[33mGET / HTTP/1.1[0m" 404 -
+127.0.0.1 - - [15/Nov/2025 19:48:02] "[33mGET / HTTP/1.1[0m" 404 -
+127.0.0.1 - - [15/Nov/2025 20:35:29] "[33mGET / HTTP/1.1[0m" 404 -

@@ -1,0 +1,32 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Data Analysis Report</title>
+        <style>
+            body { font-family: sans-serif; }
+            h1, h2 { border-bottom: 2px solid #333; padding-bottom: 0.5rem; }
+            table { border-collapse: collapse; width: 100%; margin-bottom: 2rem; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            .high-corr { background-color: #ffcccc; }
+            .med-corr { background-color: #ffffcc; }
+        </style>
+    </head>
+    <body>
+        <h1>Data Analysis Report</h1>
+
+        <h2>Summary Statistics</h2>
+        <table><tr><th></th><th>col1</th><th>col2</th><th>col3</th></tr><tr><td><strong>count</strong></td><td class="">3.0000</td><td class="">3.0000</td><td class="">3.0000</td></tr><tr><td><strong>mean</strong></td><td class="">2.0000</td><td class="">5.0000</td><td class="">8.0000</td></tr><tr><td><strong>std</strong></td><td class="">1.0000</td><td class="">1.0000</td><td class="">1.0000</td></tr><tr><td><strong>min</strong></td><td class="">1.0000</td><td class="">4.0000</td><td class="">7.0000</td></tr><tr><td><strong>25%</strong></td><td class="">1.5000</td><td class="">4.5000</td><td class="">7.5000</td></tr><tr><td><strong>50%</strong></td><td class="">2.0000</td><td class="">5.0000</td><td class="">8.0000</td></tr><tr><td><strong>75%</strong></td><td class="">2.5000</td><td class="">5.5000</td><td class="">8.5000</td></tr><tr><td><strong>max</strong></td><td class="">3.0000</td><td class="">6.0000</td><td class="">9.0000</td></tr><tr><td><strong>skew</strong></td><td class="">0.0000</td><td class="">0.0000</td><td class="">0.0000</td></tr><tr><td><strong>kurtosis</strong></td><td class="">nan</td><td class="">nan</td><td class="">nan</td></tr></table>
+
+        <h2>Correlation Matrix</h2>
+        <table><tr><th></th><th>col1</th><th>col2</th><th>col3</th></tr><tr><td><strong>col1</strong></td><td class="">1.0000</td><td class="">1.0000</td><td class="">1.0000</td></tr><tr><td><strong>col2</strong></td><td class="">1.0000</td><td class="">1.0000</td><td class="">1.0000</td></tr><tr><td><strong>col3</strong></td><td class="">1.0000</td><td class="">1.0000</td><td class="">1.0000</td></tr></table>
+
+        <h2>Suggestions</h2>
+        <ul>
+            <li>High correlation between col1 and col2. Consider removing one.</li><li>High correlation between col1 and col3. Consider removing one.</li><li>High correlation between col2 and col1. Consider removing one.</li><li>High correlation between col2 and col3. Consider removing one.</li><li>High correlation between col3 and col1. Consider removing one.</li><li>High correlation between col3 and col2. Consider removing one.</li>
+        </ul>
+    </body>
+    </html>

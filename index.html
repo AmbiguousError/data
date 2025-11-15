@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Analysis Tool</title>
+    <style>
+        body { font-family: sans-serif; }
+        #error-details {
+            white-space: pre-wrap;
+            background-color: #f0f0f0;
+            padding: 1em;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Data Science Analysis Tool</h1>
+    </header>
+    <main>
+        <section id="upload-section">
+            <h2>1. Upload Data File</h2>
+            <form id="upload-form" enctype="multipart/form-data">
+                <input type="file" id="file-input" name="file">
+                <button type="submit">Analyze</button>
+            </form>
+        </section>
+        <div id="status-container">
+            <p id="status-message"></p>
+            <div id="error-container" style="display: none;">
+                <h3>Error Details:</h3>
+                <pre id="error-details"></pre>
+            </div>
+        </div>
+        <section id="report-section" style="display: none;">
+            <h2>2. Analysis Report</h2>
+            <a id="report-link" href="#" target="_blank">View Report</a>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 Data Science Analysis Tool</p>
+    </footer>
+
+    <script>
+        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const statusMessage = document.getElementById('status-message');
+            const errorContainer = document.getElementById('error-container');
+            const errorDetails = document.getElementById('error-details');
+            const reportSection = document.getElementById('report-section');
+
+            // Reset UI
+            statusMessage.textContent = 'Uploading file...';
+            errorContainer.style.display = 'none';
+            reportSection.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', document.getElementById('file-input').files[0]);
+
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.error) {
+                statusMessage.textContent = `Error: ${data.error}`;
+                return;
+            }
+
+            const taskId = data.task_id;
+            statusMessage.textContent = 'Analysis in progress...';
+
+            const interval = setInterval(async () => {
+                const statusResponse = await fetch(`/status/${taskId}`);
+                const statusData = await statusResponse.json();
+
+                if (statusData.status === 'complete') {
+                    clearInterval(interval);
+                    statusMessage.textContent = 'Analysis complete!';
+                    const reportLink = document.getElementById('report-link');
+                    reportLink.href = `/report/${taskId}`;
+                    reportSection.style.display = 'block';
+                } else if (statusData.status === 'error') {
+                    clearInterval(interval);
+                    statusMessage.textContent = 'An error occurred during analysis.';
+                    errorDetails.textContent = statusData.message;
+                    errorContainer.style.display = 'block';
+                }
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
