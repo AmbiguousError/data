@@ -2,3 +2,5 @@ Flask
 pandas
 openpyxl
 Flask-Cors
+pycaret
+shap

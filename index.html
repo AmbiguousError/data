@@ -19,30 +19,62 @@
         <h1>Data Science Analysis Tool</h1>
     </header>
     <main>
-        <section id="upload-section">
-            <h2>1. Upload Data File</h2>
-            <form id="upload-form" enctype="multipart/form-data">
-                <input type="file" id="file-input" name="file">
-                <button type="submit">Analyze</button>
-            </form>
+        <section id="config-section">
+            <h2>Backend Configuration</h2>
+            <p>Enter the URL of the backend server.</p>
+            <input type="text" id="backend-url" value="http://127.0.0.1:5000">
+            <button id="connect-btn">Connect</button>
+            <p id="config-status"></p>
         </section>
-        <div id="status-container">
-            <p id="status-message"></p>
-            <div id="error-container" style="display: none;">
-                <h3>Error Details:</h3>
-                <pre id="error-details"></pre>
+
+        <div id="main-app" style="display: none;">
+            <section id="upload-section">
+                <h2>1. Upload Data File</h2>
+                <form id="upload-form" enctype="multipart/form-data">
+                    <input type="file" id="file-input" name="file">
+                    <input type="text" id="target-column" name="target_column" placeholder="Enter target column name (optional)">
+                    <button type="submit">Analyze</button>
+                </form>
+            </section>
+            <div id="status-container">
+                <p id="status-message"></p>
+                <div id="error-container" style="display: none;">
+                    <h3>Error Details:</h3>
+                    <pre id="error-details"></pre>
+                </div>
             </div>
+            <section id="report-section" style="display: none;">
+                <h2>2. Analysis Report</h2>
+                <a id="report-link" href="#" target="_blank">View Report</a>
+            </section>
         </div>
-        <section id="report-section" style="display: none;">
-            <h2>2. Analysis Report</h2>
-            <a id="report-link" href="#" target="_blank">View Report</a>
-        </section>
     </main>
     <footer>
         <p>&copy; 2025 Data Science Analysis Tool</p>
     </footer>
 
     <script>
+        let backendUrl = '';
+
+        document.getElementById('connect-btn').addEventListener('click', async () => {
+            const backendUrlInput = document.getElementById('backend-url').value;
+            const configStatus = document.getElementById('config-status');
+
+            try {
+                const response = await fetch(`${backendUrlInput}/health`);
+                if (response.ok) {
+                    backendUrl = backendUrlInput;
+                    document.getElementById('config-section').style.display = 'none';
+                    document.getElementById('main-app').style.display = 'block';
+                } else {
+                    throw new Error('Backend not ready');
+                }
+            } catch (error) {
+                configStatus.textContent = 'Connection failed. Please check the URL and ensure the server is running.';
+                configStatus.style.color = 'red';
+            }
+        });
+
         document.getElementById('upload-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const statusMessage = document.getElementById('status-message');
@@ -55,15 +87,25 @@
             errorContainer.style.display = 'none';
             reportSection.style.display = 'none';
 
-            const formData = new FormData();
-            formData.append('file', document.getElementById('file-input').files[0]);
+            const formData = new FormData(document.getElementById('upload-form'));
+            let data;
+            try {
+                const response = await fetch(`${backendUrl}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
 
-            const response = await fetch('/upload', {
-                method: 'POST',
-                body: formData
-            });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
-            const data = await response.json();
+                data = await response.json();
+            } catch (error) {
+                statusMessage.textContent = 'Error uploading file.';
+                errorDetails.textContent = 'Could not connect to the server. Please ensure the backend is running and accessible.';
+                errorContainer.style.display = 'block';
+                return;
+            }
             if (data.error) {
                 statusMessage.textContent = `Error: ${data.error}`;
                 return;
@@ -73,19 +115,31 @@
             statusMessage.textContent = 'Analysis in progress...';
 
             const interval = setInterval(async () => {
-                const statusResponse = await fetch(`/status/${taskId}`);
-                const statusData = await statusResponse.json();
+                try {
+                    const statusResponse = await fetch(`${backendUrl}/status/${taskId}`);
 
-                if (statusData.status === 'complete') {
+                    if (!statusResponse.ok) {
+                        throw new Error(`HTTP error! status: ${statusResponse.status}`);
+                    }
+
+                    const statusData = await statusResponse.json();
+
+                    if (statusData.status === 'complete') {
+                        clearInterval(interval);
+                        statusMessage.textContent = 'Analysis complete!';
+                        const reportLink = document.getElementById('report-link');
+                        reportLink.href = `${backendUrl}/report/${taskId}`;
+                        reportSection.style.display = 'block';
+                    } else if (statusData.status === 'error') {
+                        clearInterval(interval);
+                        statusMessage.textContent = 'An error occurred during analysis.';
+                        errorDetails.textContent = statusData.message;
+                        errorContainer.style.display = 'block';
+                    }
+                } catch (error) {
                     clearInterval(interval);
-                    statusMessage.textContent = 'Analysis complete!';
-                    const reportLink = document.getElementById('report-link');
-                    reportLink.href = `/report/${taskId}`;
-                    reportSection.style.display = 'block';
-                } else if (statusData.status === 'error') {
-                    clearInterval(interval);
-                    statusMessage.textContent = 'An error occurred during analysis.';
-                    errorDetails.textContent = statusData.message;
+                    statusMessage.textContent = 'Error checking status.';
+                    errorDetails.textContent = 'Could not connect to the server. Please ensure the backend is running and accessible.';
                     errorContainer.style.display = 'block';
                 }
             }, 3000);
