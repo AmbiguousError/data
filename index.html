@@ -73,7 +73,9 @@
             const formData = new FormData();
             formData.append('file', document.getElementById('file-input').files[0]);
 
-            const response = await fetch('/upload', {
+            const backendUrl = 'http://127.0.0.1:5000';
+
+            const response = await fetch(`${backendUrl}/upload`, {
                 method: 'POST',
                 body: formData
             });
@@ -88,14 +90,14 @@
             statusMessage.textContent = 'Analysis in progress...';
 
             const interval = setInterval(async () => {
-                const statusResponse = await fetch(`/status/${taskId}`);
+                const statusResponse = await fetch(`${backendUrl}/status/${taskId}`);
                 const statusData = await statusResponse.json();
 
                 if (statusData.status === 'complete') {
                     clearInterval(interval);
                     statusMessage.textContent = 'Analysis complete!';
                     const reportLink = document.getElementById('report-link');
-                    reportLink.href = `/report/${taskId}`;
+                    reportLink.href = `${backendUrl}/report/${taskId}`;
                     reportSection.style.display = 'block';
                 } else if (statusData.status === 'error') {
                     clearInterval(interval);
