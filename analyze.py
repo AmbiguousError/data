@@ -8,7 +8,7 @@ def analyze_data(filepath):
     """
     print("Reading data...")
     time.sleep(1) # Simulate work
-    df = pd.read_csv(filepath)
+    df = pd.read_csv(filepath, header=None, delim_whitespace=True)
 
     print("Cleaning data...")
     time.sleep(1) # Simulate work
@@ -21,7 +21,7 @@ def analyze_data(filepath):
     time.sleep(1) # Simulate work
     summary = df.describe().to_dict()
     skewness = df.skew(numeric_only=True).to_dict()
-    kurtosis = df.kurt(numeric_only=True).to_dict()
+    kurtosis = df.kurtosis(numeric_only=True).to_dict()
     for col in summary:
         if col in skewness:
             summary[col]['skew'] = skewness[col]
@@ -36,6 +36,12 @@ def analyze_data(filepath):
     print("Generating suggestions...")
     time.sleep(1) # Simulate work
     suggestions = set() # Use a set to avoid duplicate suggestions
+    for col, stats in summary.items():
+        if stats.get('skew', 0) > 1:
+            suggestions.add(f'Column {col} is highly skewed. Consider a log transformation.')
+        if stats.get('kurtosis', 0) > 3:
+            suggestions.add(f'Column {col} has high kurtosis, indicating potential outliers.')
+
     for i in range(len(corr_matrix.columns)):
         for j in range(i + 1, len(corr_matrix.columns)):
             col1 = corr_matrix.columns[i]
