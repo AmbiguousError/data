@@ -6,7 +6,7 @@ import uuid
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 UPLOAD_FOLDER = 'uploads'
 REPORTS_FOLDER = 'reports'
 LOGS_FOLDER = 'logs'
@@ -46,11 +46,19 @@ def upload_file():
         output_filepath = os.path.join(app.config['REPORTS_FOLDER'], f'{task_id}.html')
         log_filepath = os.path.join(app.config['LOGS_FOLDER'], f'{task_id}.log')
 
-        analyzer_script_path = os.path.abspath('analyze.py')
+        # Get the absolute path to the directory containing app.py
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        analyzer_script_path = os.path.join(script_dir, 'analyze.py')
+
+        target_column = request.form.get('target_column')
+        python_executable = os.path.expanduser("~/.pyenv/versions/3.11.14/bin/python")
+        command = [python_executable, '-u', analyzer_script_path, filepath, output_filepath]
+        if target_column:
+            command.append(f'--target={target_column}')
 
         with open(log_filepath, 'w') as log_file:
             process = subprocess.Popen(
-                ['python', '-u', analyzer_script_path, filepath, output_filepath],
+                command,
                 stdout=log_file,
                 stderr=subprocess.STDOUT
             )
@@ -112,6 +120,10 @@ def get_status(task_id):
 @app.route('/report/<task_id>', methods=['GET'])
 def get_report(task_id):
     return send_from_directory(app.config['REPORTS_FOLDER'], f'{task_id}.html')
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'ok'})
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
