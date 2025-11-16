@@ -43,6 +43,21 @@
     </footer>
 
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.location.protocol === 'file:') {
+                const warning = document.createElement('div');
+                warning.style.color = 'red';
+                warning.style.backgroundColor = '#ffdddd';
+                warning.style.padding = '1em';
+                warning.style.border = '1px solid red';
+                warning.innerHTML = `
+                    <strong>Warning:</strong> It looks like you're running this file directly from your filesystem. For this application to work, you need to start the backend server.
+                    Please run 'python app.py' in your terminal and then open <a href="http://127.0.0.1:5000">http://127.0.0.1:5000</a> in your browser.
+                `;
+                document.querySelector('main').prepend(warning);
+            }
+        });
+
         document.getElementById('upload-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const statusMessage = document.getElementById('status-message');
