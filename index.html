@@ -22,8 +22,8 @@
         <section id="upload-section">
             <h2>1. Upload Data File</h2>
             <form id="upload-form" enctype="multipart/form-data">
-                <input type="file" id="file-input" name="file">
-                <button type="submit">Analyze</button>
+                <input type="file" id="file-input" name="file" disabled>
+                <button type="submit" disabled>Analyze</button>
             </form>
         </section>
         <div id="status-container">
@@ -43,6 +43,35 @@
     </footer>
 
     <script>
+        const backendUrl = 'http://127.0.0.1:5000';
+        document.addEventListener('DOMContentLoaded', async () => {
+            const fileInput = document.getElementById('file-input');
+            const submitButton = document.querySelector('button[type="submit"]');
+            const statusMessage = document.getElementById('status-message');
+
+            try {
+                const response = await fetch(`${backendUrl}/health`);
+                if (response.ok) {
+                    fileInput.disabled = false;
+                    submitButton.disabled = false;
+                    statusMessage.textContent = 'Backend connected.';
+                } else {
+                    throw new Error('Backend not ready');
+                }
+            } catch (error) {
+                const warning = document.createElement('div');
+                warning.style.color = 'red';
+                warning.style.backgroundColor = '#ffdddd';
+                warning.style.padding = '1em';
+                warning.style.border = '1px solid red';
+                warning.innerHTML = `
+                    <strong>Connection Error:</strong> Could not connect to the backend server.
+                    Please run 'python app.py' in your terminal and then refresh this page.
+                `;
+                document.querySelector('main').prepend(warning);
+            }
+        });
+
         document.getElementById('upload-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const statusMessage = document.getElementById('status-message');
@@ -57,13 +86,24 @@
 
             const formData = new FormData();
             formData.append('file', document.getElementById('file-input').files[0]);
+            let data;
+            try {
+                const response = await fetch(`${backendUrl}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
 
-            const response = await fetch('/upload', {
-                method: 'POST',
-                body: formData
-            });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
-            const data = await response.json();
+                data = await response.json();
+            } catch (error) {
+                statusMessage.textContent = 'Error uploading file.';
+                errorDetails.textContent = 'Could not connect to the server. Please ensure the backend is running and accessible.';
+                errorContainer.style.display = 'block';
+                return;
+            }
             if (data.error) {
                 statusMessage.textContent = `Error: ${data.error}`;
                 return;
@@ -73,19 +113,31 @@
             statusMessage.textContent = 'Analysis in progress...';
 
             const interval = setInterval(async () => {
-                const statusResponse = await fetch(`/status/${taskId}`);
-                const statusData = await statusResponse.json();
+                try {
+                    const statusResponse = await fetch(`${backendUrl}/status/${taskId}`);
 
-                if (statusData.status === 'complete') {
+                    if (!statusResponse.ok) {
+                        throw new Error(`HTTP error! status: ${statusResponse.status}`);
+                    }
+
+                    const statusData = await statusResponse.json();
+
+                    if (statusData.status === 'complete') {
+                        clearInterval(interval);
+                        statusMessage.textContent = 'Analysis complete!';
+                        const reportLink = document.getElementById('report-link');
+                        reportLink.href = `${backendUrl}/report/${taskId}`;
+                        reportSection.style.display = 'block';
+                    } else if (statusData.status === 'error') {
+                        clearInterval(interval);
+                        statusMessage.textContent = 'An error occurred during analysis.';
+                        errorDetails.textContent = statusData.message;
+                        errorContainer.style.display = 'block';
+                    }
+                } catch (error) {
                     clearInterval(interval);
-                    statusMessage.textContent = 'Analysis complete!';
-                    const reportLink = document.getElementById('report-link');
-                    reportLink.href = `/report/${taskId}`;
-                    reportSection.style.display = 'block';
-                } else if (statusData.status === 'error') {
-                    clearInterval(interval);
-                    statusMessage.textContent = 'An error occurred during analysis.';
-                    errorDetails.textContent = statusData.message;
+                    statusMessage.textContent = 'Error checking status.';
+                    errorDetails.textContent = 'Could not connect to the server. Please ensure the backend is running and accessible.';
                     errorContainer.style.display = 'block';
                 }
             }, 3000);
