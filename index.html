@@ -32,6 +32,7 @@
                 <h2>1. Upload Data File</h2>
                 <form id="upload-form" enctype="multipart/form-data">
                     <input type="file" id="file-input" name="file">
+                    <input type="text" id="target-column" name="target_column" placeholder="Enter target column name (optional)">
                     <button type="submit">Analyze</button>
                 </form>
             </section>
@@ -86,8 +87,7 @@
             errorContainer.style.display = 'none';
             reportSection.style.display = 'none';
 
-            const formData = new FormData();
-            formData.append('file', document.getElementById('file-input').files[0]);
+            const formData = new FormData(document.getElementById('upload-form'));
             let data;
             try {
                 const response = await fetch(`${backendUrl}/upload`, {

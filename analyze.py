@@ -1,10 +1,14 @@
 import pandas as pd
 import sys
 import time
+import argparse
+import base64
+from io import BytesIO
+import matplotlib.pyplot as plt
 
-def analyze_data(filepath):
+def analyze_data(filepath, target_column=None):
     """
-    Performs EDA on the given data file and returns the results.
+    Performs EDA and optional AutoML on the given data file.
     """
     print("Reading data...")
     time.sleep(1) # Simulate work
@@ -49,9 +53,46 @@ def analyze_data(filepath):
             if abs(corr_matrix.iloc[i, j]) > 0.8:
                 suggestions.add(f'High correlation between {col1} and {col2}. Consider removing one.')
 
-    return summary, corr_matrix.to_dict(), list(suggestions)
+    automl_results = {}
+    if target_column:
+        print(f"Starting AutoML for target: {target_column}...")
 
-def generate_html(summary, corr_matrix, suggestions):
+        # Check if target_column is an integer (index)
+        try:
+            target_column = int(target_column)
+            if target_column < 0 or target_column >= len(df.columns):
+                 raise ValueError("Target column index is out of bounds.")
+            target_column = df.columns[target_column]
+        except ValueError:
+            if target_column not in df.columns:
+                 raise ValueError(f"Target column '{target_column}' not found in the dataset.")
+
+        # Dynamically determine problem type
+        if pd.api.types.is_numeric_dtype(df[target_column]) and df[target_column].nunique() > 20:
+             from pycaret.regression import setup, compare_models, pull, plot_model, save_model
+             exp = setup(data=df, target=target_column, session_id=123, verbose=False)
+        else:
+             from pycaret.classification import setup, compare_models, pull, plot_model, save_model
+             exp = setup(data=df, target=target_column, session_id=123, verbose=False)
+
+        best_model = compare_models()
+
+        automl_results['performance_grid'] = pull().to_html()
+
+        # Generate and save plots as base64 strings
+        plot_names = ['feature', 'summary']
+        for plot_name in plot_names:
+            try:
+                plot_model(best_model, plot=plot_name, save=True)
+                with open(f'{plot_name}.png', "rb") as f:
+                    automl_results[f'{plot_name}_plot'] = base64.b64encode(f.read()).decode()
+            except Exception as e:
+                print(f"Could not generate plot '{plot_name}': {e}")
+                automl_results[f'{plot_name}_plot'] = None
+
+    return summary, corr_matrix.to_dict(), list(suggestions), automl_results
+
+def generate_html(summary, corr_matrix, suggestions, automl_results=None):
     """
     Generates a self-contained HTML report from the analysis results.
     """
@@ -86,6 +127,8 @@ def generate_html(summary, corr_matrix, suggestions):
         <ul>
             {suggestions_list}
         </ul>
+
+        {automl_section}
     </body>
     </html>
     """
@@ -93,11 +136,26 @@ def generate_html(summary, corr_matrix, suggestions):
     summary_table = create_html_table(summary)
     corr_table = create_html_table(corr_matrix, highlight_corr=True)
     suggestions_list = "".join(f"<li>{s}</li>" for s in suggestions)
+    automl_section = ""
+
+    if automl_results:
+        automl_section += "<h2>AutoML Report</h2>"
+        automl_section += "<h3>Model Performance</h3>"
+        automl_section += automl_results.get('performance_grid', '<p>No performance data available.</p>')
+
+        if automl_results.get('feature_plot'):
+            automl_section += "<h3>Feature Importance</h3>"
+            automl_section += f"<img src='data:image/png;base64,{automl_results['feature_plot']}'/>"
+
+        if automl_results.get('summary_plot'):
+            automl_section += "<h3>SHAP Summary Plot</h3>"
+            automl_section += f"<img src='data:image/png;base64,{automl_results['summary_plot']}'/>"
 
     return html.format(
         summary_table=summary_table,
         corr_table=corr_table,
-        suggestions_list=suggestions_list
+        suggestions_list=suggestions_list,
+        automl_section=automl_section
     )
 
 def create_html_table(data, highlight_corr=False):
@@ -134,24 +192,29 @@ def create_html_table(data, highlight_corr=False):
     return table
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print("Usage: python analyze.py <input_filepath> <output_filepath>")
+    parser = argparse.ArgumentParser(description='Perform data analysis and AutoML.')
+    parser.add_argument('input_filepath', type=str, help='Path to the input data file.')
+    parser.add_argument('output_filepath', type=str, help='Path to the output report file.')
+    parser.add_argument('--target', type=str, help='Name of the target column for AutoML.')
+    args = parser.parse_args()
+
+    try:
+        print("Starting analysis...")
+        time.sleep(1) # Simulate work
+
+        summary, corr_matrix, suggestions, automl_results = analyze_data(args.input_filepath, args.target)
+
+        print("Generating HTML report...")
+        time.sleep(1) # Simulate work
+
+        html = generate_html(summary, corr_matrix, suggestions, automl_results)
+        with open(args.output_filepath, 'w') as f:
+            f.write(html)
+
+        print("Analysis complete.")
+        time.sleep(1) # Simulate work
+    except Exception as e:
+        import traceback
+        print("--- SCRIPT FAILED ---")
+        print(traceback.format_exc())
         sys.exit(1)
-
-    input_filepath = sys.argv[1]
-    output_filepath = sys.argv[2]
-
-    print("Starting analysis...")
-    time.sleep(1) # Simulate work
-
-    summary, corr_matrix, suggestions = analyze_data(input_filepath)
-
-    print("Generating HTML report...")
-    time.sleep(1) # Simulate work
-
-    html = generate_html(summary, corr_matrix, suggestions)
-    with open(output_filepath, 'w') as f:
-        f.write(html)
-
-    print("Analysis complete.")
-    time.sleep(1) # Simulate work

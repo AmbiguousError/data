@@ -50,9 +50,15 @@ def upload_file():
         script_dir = os.path.dirname(os.path.abspath(__file__))
         analyzer_script_path = os.path.join(script_dir, 'analyze.py')
 
+        target_column = request.form.get('target_column')
+        python_executable = os.path.expanduser("~/.pyenv/versions/3.11.14/bin/python")
+        command = [python_executable, '-u', analyzer_script_path, filepath, output_filepath]
+        if target_column:
+            command.append(f'--target={target_column}')
+
         with open(log_filepath, 'w') as log_file:
             process = subprocess.Popen(
-                ['python', '-u', analyzer_script_path, filepath, output_filepath],
+                command,
                 stdout=log_file,
                 stderr=subprocess.STDOUT
             )

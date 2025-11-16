@@ -13,15 +13,31 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Installation
 
+**Important:** This project requires Python 3.11.
+
 1.  **Clone the repository:**
     ```bash
     git clone <repository-url>
     ```
+
 2.  **Navigate to the project directory:**
     ```bash
     cd <project-directory>
     ```
-3.  **Install the required dependencies:**
+
+3.  **Create and activate a virtual environment with Python 3.11:**
+    *   **Using `venv`:**
+        ```bash
+        python3.11 -m venv venv
+        source venv/bin/activate
+        ```
+    *   **Using `conda`:**
+        ```bash
+        conda create -n myenv python=3.11
+        conda activate myenv
+        ```
+
+4.  **Install the required dependencies:**
     ```bash
     pip install -r requirements.txt
     ```
