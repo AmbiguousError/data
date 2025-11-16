@@ -46,7 +46,9 @@ def upload_file():
         output_filepath = os.path.join(app.config['REPORTS_FOLDER'], f'{task_id}.html')
         log_filepath = os.path.join(app.config['LOGS_FOLDER'], f'{task_id}.log')
 
-        analyzer_script_path = os.path.abspath('analyze.py')
+        # Get the absolute path to the directory containing app.py
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        analyzer_script_path = os.path.join(script_dir, 'analyze.py')
 
         with open(log_filepath, 'w') as log_file:
             process = subprocess.Popen(
